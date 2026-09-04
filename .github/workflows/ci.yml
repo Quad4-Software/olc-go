@@ -1,0 +1,105 @@
+# Fast Go CI with lint, official OLC corpus, race, and bench smoke.
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+      - "olc/testdata/**"
+      - ".golangci.yml"
+      - "Makefile"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches:
+      - master
+      - main
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+      - "olc/testdata/**"
+      - ".golangci.yml"
+      - "Makefile"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+          args: --timeout=5m ./...
+
+      - name: staticcheck
+        run: |
+          set -euo pipefail
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
+      - name: Format check
+        run: |
+          set -euo pipefail
+          go install mvdan.cc/gofumpt@latest
+          go install golang.org/x/tools/cmd/goimports@latest
+          test -z "$(gofumpt -l .)"
+          test -z "$(goimports -local github.com/Quad4-Software/olc-go -l .)"
+
+  test:
+    name: test (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        go:
+          - "1.26.5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test official OLC corpus
+        run: go test ./... -count=1 -v
+
+      - name: Race
+        run: go test ./... -race -count=1
+
+      - name: Bench smoke
+        run: go test ./olc -bench=BenchmarkEncodeTo_preallocated -benchmem -count=1 -benchtime=100ms
+
+      - name: Alloc guards
+        run: go test ./olc -count=1 -run 'NoAllocs|EncodeTo_'
