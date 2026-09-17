@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Minimum Go version is now 1.27.1.
+- Standalone staticcheck removed from CI and `make ci`; staticcheck v0.8.1
+  does not support Go 1.27. golangci-lint still runs the honnef.co SA checks.
+
 ## [0.1.0] - 2026-09-17
 
 ### Added

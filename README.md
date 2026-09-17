@@ -12,7 +12,7 @@ Dependency-free Go implementation of [Open Location Code](https://github.com/goo
 
 ## Requirements
 
-- Go 1.26.5 or later
+- Go 1.27.1 or later
 
 ## Install
 

@@ -12,6 +12,9 @@ GOFUMPT_VERSION ?= v0.11.0
 GOIMPORTS_VERSION ?= v0.49.0
 MODULE ?= github.com/Quad4-Software/olc-go
 
+# NOTE: staticcheck v0.8.1 does not support Go 1.27 yet and is left out of ci.
+# golangci-lint still runs the honnef.co SA checks via its staticcheck linter.
+
 .PHONY: help tools fmt vet lint staticcheck test test-race bench fuzz ci clean
 
 help:
@@ -68,7 +71,7 @@ bench:
 fuzz:
 	$(GO) test ./olc -fuzz=FuzzEncodeDecodeRoundTrip -fuzztime=5s
 
-ci: vet lint staticcheck test
+ci: vet lint test
 
 clean:
 	rm -f coverage.out cover.out cpu.out mem.out olc.test example/example

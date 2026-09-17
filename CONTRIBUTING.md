@@ -2,7 +2,7 @@
 
 ## Development
 
-Requires Go 1.26.5 or later. No external dependencies.
+Requires Go 1.27.1 or later. No external dependencies.
 
 Common tasks:
 
