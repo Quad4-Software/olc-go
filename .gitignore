@@ -5,7 +5,6 @@
 *.so
 *.dylib
 *.test
-pluscodes.test
 example/example
 /example/example
 

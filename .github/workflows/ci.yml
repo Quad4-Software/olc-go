@@ -122,4 +122,7 @@ jobs:
         run: go test ./olc -bench=BenchmarkEncodeTo_preallocated -benchmem -count=1 -benchtime=100ms
 
       - name: Alloc guards
-        run: go test ./olc -count=1 -run 'NoAllocs|EncodeTo_'
+        run: go test ./olc -count=1 -run 'NoAllocs|EncodeTo_|Append'
+
+      - name: Fuzz smoke
+        run: go test ./olc -fuzz=FuzzEncodeDecodeRoundTrip -fuzztime=10s

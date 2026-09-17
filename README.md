@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Quad4-Software/olc-go/actions/workflows/ci.yml/badge.svg)](https://github.com/Quad4-Software/olc-go/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Quad4-Software/olc-go/actions/workflows/codeql.yml/badge.svg)](https://github.com/Quad4-Software/olc-go/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Quad4-Software/olc-go/badge)](https://scorecard.dev/viewer/?uri=github.com/Quad4-Software/olc-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/Quad4-Software/olc-go.svg)](https://pkg.go.dev/github.com/Quad4-Software/olc-go)
 [![License](https://img.shields.io/github/license/Quad4-Software/olc-go)](LICENSE)
 
@@ -82,11 +83,15 @@ Tests load the official Open Location Code CSV corpus from
 | `decoding.csv` | `Decode` bounding boxes |
 | `shortCodeTests.csv` | `Shorten` / `RecoverNearest` |
 
-`EncodeTo` and `Decode` are covered by zero-allocation tests. Fuzz coverage lives in `FuzzEncodeDecodeRoundTrip`.
+`EncodeTo`, `Decode`, `AppendShorten` and `AppendRecoverNearest` are covered by
+zero-allocation tests. Fuzz coverage lives in `FuzzEncodeDecodeRoundTrip`.
 
 ## Performance
 
-Prefer `EncodeTo` or `AppendEncode` when encoding in a hot path. `Encode` returns a `string` and therefore allocates once. `Decode` of a full code is allocation-free on the success path.
+Prefer `EncodeTo` or `AppendEncode` when encoding in a hot path, and
+`AppendShorten` / `AppendRecoverNearest` for shorten and recover. `Encode`
+returns a `string` and therefore allocates once. `Decode` of a full code is
+allocation-free on the success path.
 
 ## Testing
 

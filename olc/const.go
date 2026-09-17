@@ -68,6 +68,9 @@ func upper(b byte) byte {
 }
 
 func clipLatitude(lat float64) float64 {
+	if math.IsNaN(lat) {
+		return 0
+	}
 	if lat > latMax {
 		return latMax
 	}
@@ -77,12 +80,17 @@ func clipLatitude(lat float64) float64 {
 	return lat
 }
 
+// normalizeLng wraps value into [-180, 180). Non-finite input returns 0.
 func normalizeLng(value float64) float64 {
-	for value < -lngMax {
-		value += 2 * lngMax
+	if math.IsNaN(value) || math.IsInf(value, 0) {
+		return 0
 	}
-	for value >= lngMax {
-		value -= 2 * lngMax
+	value = math.Mod(value, 2*lngMax)
+	if value >= lngMax {
+		return value - 2*lngMax
+	}
+	if value < -lngMax {
+		return value + 2*lngMax
 	}
 	return value
 }
@@ -111,7 +119,7 @@ func floorMul(degrees, precision float64) int64 {
 }
 
 func latitudeAsInteger(latDegrees float64) int64 {
-	latVal := floorMul(latDegrees, finalLatPrecision) + latOffset
+	latVal := floorMul(clipLatitude(latDegrees), finalLatPrecision) + latOffset
 	if latVal < 0 {
 		return 0
 	}
@@ -122,9 +130,9 @@ func latitudeAsInteger(latDegrees float64) int64 {
 }
 
 func longitudeAsInteger(lngDegrees float64) int64 {
-	lngVal := floorMul(lngDegrees, finalLngPrecision) + lngOffset
+	lngVal := floorMul(normalizeLng(lngDegrees), finalLngPrecision) + lngOffset
 	if lngVal < 0 {
-		return lngVal%lngMod + lngMod
+		return (lngVal%lngMod + lngMod) % lngMod
 	}
 	if lngVal >= lngMod {
 		return lngVal % lngMod

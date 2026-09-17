@@ -1,9 +1,6 @@
 package olc
 
-import (
-	"math"
-	"testing"
-)
+import "testing"
 
 func FuzzEncodeDecodeRoundTrip(f *testing.F) {
 	seeds := []struct {
@@ -20,12 +17,6 @@ func FuzzEncodeDecodeRoundTrip(f *testing.F) {
 		f.Add(s.lat, s.lng, s.length)
 	}
 	f.Fuzz(func(t *testing.T, lat, lng float64, length int) {
-		if math.IsNaN(lat) || math.IsNaN(lng) || math.IsInf(lat, 0) || math.IsInf(lng, 0) {
-			t.Skip()
-		}
-		if lat < -90 || lat > 90 {
-			t.Skip()
-		}
 		code := Encode(lat, lng, length)
 		if !IsFull(code) {
 			t.Skip()

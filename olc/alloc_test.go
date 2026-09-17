@@ -82,3 +82,29 @@ func TestEncodeTo_ShortBuffer(t *testing.T) {
 		t.Fatalf("got %v want ErrShortBuffer", err)
 	}
 }
+
+func TestAppendShorten_NoAllocs(t *testing.T) {
+	buf := make([]byte, 0, MaxEncodedLen)
+	allocs := testing.AllocsPerRun(1000, func() {
+		var err error
+		if buf, err = AppendShorten(buf[:0], "9C3W9QCJ+2VX", 51.3708675, -1.217765625); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("AppendShorten allocs %.3f want 0", allocs)
+	}
+}
+
+func TestAppendRecoverNearest_NoAllocs(t *testing.T) {
+	buf := make([]byte, 0, MaxEncodedLen)
+	allocs := testing.AllocsPerRun(1000, func() {
+		var err error
+		if buf, err = AppendRecoverNearest(buf[:0], "45+G6", 14.95125, -23.5001); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("AppendRecoverNearest allocs %.3f want 0", allocs)
+	}
+}

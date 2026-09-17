@@ -8,6 +8,8 @@ var ErrShortBuffer = errors.New("olc: short buffer")
 // Encode converts latitude and longitude into a Open Location Code of the given length.
 //
 // lat is clipped to [-90, 90]. lng is normalised to [-180, 180).
+// NaN coordinates encode as 0 degrees; infinite latitudes clip to the poles
+// and infinite longitudes encode as 0.
 // If codeLen <= 0, the default length of 10 is used. Odd lengths below 10 are
 // rounded up to even. Lengths above 15 are clipped to 15.
 func Encode(lat, lng float64, codeLen int) string {
