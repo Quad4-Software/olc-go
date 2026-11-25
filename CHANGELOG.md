@@ -3,6 +3,31 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Apache-2.0 attribution and license text for upstream implementation portions.
+
+### Changed
+
+- Require Go 1.27.4 and update the pinned lint tools. Staticcheck runs again
+  with Go 1.27 support.
+- Move the module to `git.quad4.io/libraries/olc-go`.
+- `make ci` now runs formatting, lint, staticcheck, race, bench, and fuzz checks.
+
+### Fixed
+
+- Valid overlong short codes recover without panicking. Full overlong codes
+  pass through `RecoverNearest` unchanged.
+- Encode boundary snapping covers only two floating-point steps, so values
+  more than two floating-point steps below a boundary stay in the lower cell.
+- The example CLI decode action returns after decoding.
+
+### Removed
+
+- Remove the GitHub-only `.github` metadata and workflows.
+
 ## [0.1.0] - 2026-09-17
 
 ### Added

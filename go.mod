@@ -1,3 +1,3 @@
-module github.com/Quad4-Software/olc-go
+module git.quad4.io/libraries/olc-go
 
-go 1.27.1
+go 1.27.4

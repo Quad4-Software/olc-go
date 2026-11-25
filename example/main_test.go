@@ -81,3 +81,13 @@ func TestRun(t *testing.T) {
 		})
 	}
 }
+
+func TestRunDecodeDoesNotEncode(t *testing.T) {
+	var buf bytes.Buffer
+	if err := run(&buf, []string{"-decode", "6GCRPR78+CV"}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "encode ") {
+		t.Fatalf("decode output includes encode action: %q", buf.String())
+	}
+}

@@ -45,12 +45,21 @@ func AppendShorten(dst []byte, code string, lat, lng float64) ([]byte, error) {
 	centerLat, centerLng := area.Center()
 	distance := math.Max(math.Abs(centerLat-lat), math.Abs(centerLng-lng))
 
+	start := 0
 	for i := len(pairResolutions) - 2; i >= 1; i-- {
 		if distance < pairResolutions[i]*0.3 {
-			return append(dst, upperBuf[(i+1)*2:n]...), nil
+			start = (i + 1) * 2
+			break
 		}
 	}
-	return append(dst, upperBuf[:n]...), nil
+	if len(code) <= MaxEncodedLen {
+		return append(dst, upperBuf[start:n]...), nil
+	}
+	dst = append(dst, upperBuf[start:n]...)
+	for i := n; i < len(code); i++ {
+		dst = append(dst, upper(code[i]))
+	}
+	return dst, nil
 }
 
 // RecoverNearest recovers the nearest full Open Location Code from a short code and reference point.
@@ -68,8 +77,7 @@ func RecoverNearest(code string, lat, lng float64) (string, error) {
 // when the caller reuses a buffer.
 func AppendRecoverNearest(dst []byte, code string, lat, lng float64) ([]byte, error) {
 	if err := CheckFull(code); err == nil {
-		n := min(len(code), MaxEncodedLen)
-		for i := range n {
+		for i := 0; i < len(code); i++ {
 			dst = append(dst, upper(code[i]))
 		}
 		return dst, nil
@@ -96,7 +104,7 @@ func AppendRecoverNearest(dst []byte, code string, lat, lng float64) ([]byte, er
 		return dst, err
 	}
 	write := padLen
-	for i := 0; i < len(code); i++ {
+	for i := 0; i < len(code) && write < len(merged); i++ {
 		merged[write] = upper(code[i])
 		write++
 	}

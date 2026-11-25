@@ -3,7 +3,7 @@ package olc_test
 import (
 	"fmt"
 
-	"github.com/Quad4-Software/olc-go/olc"
+	"git.quad4.io/libraries/olc-go/olc"
 )
 
 func ExampleEncode() {

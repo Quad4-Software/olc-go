@@ -1,23 +1,17 @@
-# OLC-Go
-
-[![CI](https://github.com/Quad4-Software/olc-go/actions/workflows/ci.yml/badge.svg)](https://github.com/Quad4-Software/olc-go/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Quad4-Software/olc-go/actions/workflows/codeql.yml/badge.svg)](https://github.com/Quad4-Software/olc-go/actions/workflows/codeql.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Quad4-Software/olc-go/badge)](https://scorecard.dev/viewer/?uri=github.com/Quad4-Software/olc-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/Quad4-Software/olc-go.svg)](https://pkg.go.dev/github.com/Quad4-Software/olc-go)
-[![License](https://img.shields.io/github/license/Quad4-Software/olc-go)](LICENSE)
+# olc-go
 
 Dependency-free Go implementation of [Open Location Code](https://github.com/google/open-location-code) (OLC).
 
-**Module:** `github.com/Quad4-Software/olc-go`
+**Module:** `git.quad4.io/libraries/olc-go`
 
 ## Requirements
 
-- Go 1.27.1 or later
+- Go 1.27.4 or later
 
 ## Install
 
 ```bash
-go get github.com/Quad4-Software/olc-go@latest
+go get git.quad4.io/libraries/olc-go@latest
 ```
 
 ## Usage
@@ -28,7 +22,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Quad4-Software/olc-go/olc"
+	"git.quad4.io/libraries/olc-go/olc"
 )
 
 func main() {
@@ -84,7 +78,8 @@ Tests load the official Open Location Code CSV corpus from
 | `shortCodeTests.csv` | `Shorten` / `RecoverNearest` |
 
 `EncodeTo`, `Decode`, `AppendShorten` and `AppendRecoverNearest` are covered by
-zero-allocation tests. Fuzz coverage lives in `FuzzEncodeDecodeRoundTrip`.
+zero-allocation tests. Fuzz coverage lives in `FuzzEncodeDecodeRoundTrip` and
+`FuzzCodeOperations`.
 
 ## Performance
 
@@ -105,6 +100,6 @@ allocation-free on the success path.
 
 ## License
 
-Copyright 2026 Quad4. See [LICENSE](LICENSE) (0BSD).
+0BSD. See [LICENSE](LICENSE).
 
-Official OLC test CSV files are Apache-2.0; see [NOTICE](NOTICE).
+Upstream OLC test CSV files and implementation portions are Apache-2.0. See [NOTICE](NOTICE).

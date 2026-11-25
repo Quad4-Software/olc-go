@@ -1,16 +1,6 @@
-# Security Policy
+# Security
 
-## Reporting
-
-Report vulnerabilities privately via GitHub Security Advisories on this repository.
+Report vulnerabilities privately to `security@quad4.io`.
 Do not open a public issue for security reports.
 
-## Scope
-
-This project is a dependency-free Open Location Code library. There is no network service
-and CI does not hold cloud deploy secrets.
-
-## Response
-
-Reports are reviewed as soon as practical. Valid issues get a private advisory and a fix
-release when needed.
+Include enough detail to reproduce the issue. Reports are reviewed as soon as practical.

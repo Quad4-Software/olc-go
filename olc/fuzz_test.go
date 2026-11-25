@@ -32,3 +32,32 @@ func FuzzEncodeDecodeRoundTrip(f *testing.F) {
 		}
 	})
 }
+
+func FuzzCodeOperations(f *testing.F) {
+	seeds := []string{
+		"6GCRPR78+CV",
+		"8FWCX400+",
+		"45+G6",
+		"+G6GGGGGGGGGGGGGGGG",
+		"849VGJQF+VX7QR3JW",
+		"8FWC2_45+G6",
+		"8FWC2η45+G6",
+		"\xff\xfe+",
+	}
+	for _, code := range seeds {
+		f.Add(code, 37.5397, -122.3751)
+	}
+	f.Fuzz(func(t *testing.T, code string, lat, lng float64) {
+		if CheckFull(code) == nil {
+			if _, err := Decode(code); err != nil {
+				t.Fatalf("Decode(%q): %v", code, err)
+			}
+			_, _ = Shorten(code, lat, lng)
+		}
+		if CheckShort(code) == nil {
+			if _, err := RecoverNearest(code, lat, lng); err != nil {
+				t.Fatalf("RecoverNearest(%q): %v", code, err)
+			}
+		}
+	})
+}

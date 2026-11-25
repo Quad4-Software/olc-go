@@ -108,3 +108,41 @@ func TestAppendRecoverNearest_NoAllocs(t *testing.T) {
 		t.Fatalf("AppendRecoverNearest allocs %.3f want 0", allocs)
 	}
 }
+
+func TestAppendEncode_Growth(t *testing.T) {
+	for _, initialLen := range []int{0, 1, 3, 20} {
+		buf := make([]byte, initialLen)
+		for i := range buf {
+			buf[i] = 'x'
+		}
+		prefix := string(buf)
+		got := AppendEncode(buf, 0, 0, 10)
+		want := prefix + Encode(0, 0, 10)
+		if string(got) != want {
+			t.Errorf("len %d: got %q want %q", initialLen, got, want)
+		}
+	}
+}
+
+func TestEncodedLen_Clipping(t *testing.T) {
+	cases := []struct {
+		codeLen int
+		want    int
+	}{
+		{-1, 11},
+		{0, 11},
+		{1, 9},
+		{2, 9},
+		{7, 9},
+		{8, 9},
+		{9, 11},
+		{10, 11},
+		{15, 16},
+		{100, 16},
+	}
+	for _, tc := range cases {
+		if got := EncodedLen(tc.codeLen); got != tc.want {
+			t.Errorf("EncodedLen(%d)=%d want %d", tc.codeLen, got, tc.want)
+		}
+	}
+}

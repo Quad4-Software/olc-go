@@ -29,7 +29,7 @@ const (
 	latRange  = 2 * latMax * finalLatPrecision
 	lngMod    = 2 * lngMax * finalLngPrecision
 
-	// MaxEncodedLen is the maximum byte length of a Open Location Code including '+'.
+	// MaxEncodedLen is the maximum byte length produced by Encode, including '+'.
 	MaxEncodedLen = maxCodeLen + 1
 )
 
@@ -48,7 +48,7 @@ func init() {
 	}
 }
 
-// CodeArea is the geographic area represented by a Open Location Code.
+// CodeArea is the geographic area represented by an Open Location Code.
 type CodeArea struct {
 	LatLo, LngLo, LatHi, LngHi float64
 	Len                        int
@@ -95,9 +95,10 @@ func normalizeLng(value float64) float64 {
 	return value
 }
 
-// floorMul returns floor(degrees * precision), snapping values that are within
-// a tiny relative epsilon of an integer. That corrects float64 products that
-// land just below an exact multiple (for example 40.6 * precision).
+// floorMul returns floor(degrees * precision), snapping values within two
+// floating-point steps of an integer. That corrects products that land just
+// below an exact multiple (for example 40.6 * precision) without moving values
+// more than two steps below the boundary.
 func floorMul(degrees, precision float64) int64 {
 	x := degrees * precision
 	nearest := math.Round(x)
@@ -105,14 +106,9 @@ func floorMul(degrees, precision float64) int64 {
 	if diff < 0 {
 		diff = -diff
 	}
-	limit := nearest
-	if limit < 0 {
-		limit = -limit
-	}
-	if limit < 1 {
-		limit = 1
-	}
-	if diff <= limit*1e-15 {
+	absX := math.Abs(x)
+	ulp := math.Nextafter(absX, math.Inf(1)) - absX
+	if diff <= 2*ulp {
 		return int64(nearest)
 	}
 	return int64(math.Floor(x))

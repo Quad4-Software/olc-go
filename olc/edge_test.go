@@ -108,3 +108,62 @@ func TestAppendRecoverNearest_FullCodeUppercased(t *testing.T) {
 		t.Fatalf("AppendRecoverNearest=%q want %q", dst, "8FWC2345+G6")
 	}
 }
+
+func TestRecoverNearest_OverlongShortCode(t *testing.T) {
+	cases := []struct {
+		code string
+		want string
+	}{
+		{"45+G6GGGGGGGG", "849VHJ45+G6GGGGG"},
+		{"+G6GGGGGGGGGGGGGGGG", "849VGJQG+G6GGGGG"},
+	}
+	for _, tc := range cases {
+		got, err := RecoverNearest(tc.code, 37.5397, -122.3751)
+		if err != nil {
+			t.Fatalf("RecoverNearest(%q): %v", tc.code, err)
+		}
+		if got != tc.want {
+			t.Errorf("RecoverNearest(%q)=%q want %q", tc.code, got, tc.want)
+		}
+	}
+}
+
+func TestRecoverNearest_OverlongFullCodeUnchanged(t *testing.T) {
+	const code = "849vgjqf+vx7qr3jw"
+	got, err := RecoverNearest(code, 37.5397, -122.3751)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "849VGJQF+VX7QR3JW" {
+		t.Fatalf("RecoverNearest=%q want full overlong code uppercased", got)
+	}
+}
+
+func TestShorten_OverlongFullCode(t *testing.T) {
+	const code = "849VGJQF+VX7QR3JW"
+	got, err := Shorten(code, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != code {
+		t.Fatalf("Shorten far reference=%q want %q", got, code)
+	}
+	got, err = Shorten(code, 37.53966914, -122.37506976)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "+VX7QR3JW" {
+		t.Fatalf("Shorten near reference=%q want %q", got, "+VX7QR3JW")
+	}
+}
+
+func TestFloorMul_DoesNotSnapRepresentableBoundaryGap(t *testing.T) {
+	const boundary = float64(1e9)
+	x := boundary
+	for range 4 {
+		x = math.Nextafter(x, 0)
+	}
+	if got := floorMul(x, 1); got != int64(boundary)-1 {
+		t.Fatalf("floorMul(%v, 1)=%d want %d", x, got, int64(boundary)-1)
+	}
+}

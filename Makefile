@@ -1,4 +1,4 @@
-# Dev targets for olc-go. Tools install into $(GOBIN) when missing.
+# Dev targets for olc-go. The tools target installs pinned versions into $(GOBIN).
 GO ?= go
 GOBIN ?= $(shell $(GO) env GOPATH)/bin
 GOLANGCI_LINT ?= $(GOBIN)/golangci-lint
@@ -6,22 +6,20 @@ GOFUMPT ?= $(GOBIN)/gofumpt
 GOIMPORTS ?= $(GOBIN)/goimports
 STATICCHECK ?= $(GOBIN)/staticcheck
 
-GOLANGCI_LINT_VERSION ?= v2.13.2
-STATICCHECK_VERSION ?= v0.8.1
-GOFUMPT_VERSION ?= v0.11.0
-GOIMPORTS_VERSION ?= v0.49.0
-MODULE ?= github.com/Quad4-Software/olc-go
+GOLANGCI_LINT_VERSION ?= v2.15.0
+STATICCHECK_VERSION ?= v0.8.2
+GOFUMPT_VERSION ?= v0.12.0
+GOIMPORTS_VERSION ?= v0.53.0
+MODULE ?= git.quad4.io/libraries/olc-go
 
-# NOTE: staticcheck v0.8.1 does not support Go 1.27 yet and is left out of ci.
-# golangci-lint still runs the honnef.co SA checks via its staticcheck linter.
-
-.PHONY: help tools fmt vet lint staticcheck test test-race bench fuzz ci clean
+.PHONY: help tools fmt fmt-check vet lint staticcheck test test-race bench fuzz ci clean
 
 help:
 	@printf '%s\n' \
 		'Targets:' \
-		'  tools         Install golangci-lint, gofumpt, goimports, staticcheck' \
+		'  tools         Install or update golangci-lint, gofumpt, goimports, staticcheck' \
 		'  fmt           Format with gofumpt and goimports' \
+		'  fmt-check     Check gofumpt and goimports formatting' \
 		'  vet           Run go vet' \
 		'  lint          Run golangci-lint' \
 		'  staticcheck   Run staticcheck' \
@@ -29,10 +27,14 @@ help:
 		'  test-race     Run tests with the race detector' \
 		'  bench         Bench smoke for EncodeTo' \
 		'  fuzz          Short bounded fuzz' \
-		'  ci            Local stand-in for CI checks' \
+		'  ci            Run all local checks' \
 		'  clean         Remove local build artifacts'
 
-tools: $(GOLANGCI_LINT) $(GOFUMPT) $(GOIMPORTS) $(STATICCHECK)
+tools:
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	$(GO) install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
+	$(GO) install golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION)
+	$(GO) install honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION)
 
 $(GOLANGCI_LINT):
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
@@ -49,6 +51,10 @@ $(STATICCHECK):
 fmt: $(GOFUMPT) $(GOIMPORTS)
 	$(GOFUMPT) -l -w .
 	$(GOIMPORTS) -local $(MODULE) -w .
+
+fmt-check: $(GOFUMPT) $(GOIMPORTS)
+	@files="$$($(GOFUMPT) -l .)"; test -z "$$files" || { echo "$$files"; exit 1; }
+	@files="$$($(GOIMPORTS) -local $(MODULE) -l .)"; test -z "$$files" || { echo "$$files"; exit 1; }
 
 vet:
 	$(GO) vet ./...
@@ -70,8 +76,9 @@ bench:
 
 fuzz:
 	$(GO) test ./olc -fuzz=FuzzEncodeDecodeRoundTrip -fuzztime=5s
+	$(GO) test ./olc -fuzz=FuzzCodeOperations -fuzztime=5s
 
-ci: vet lint test
+ci: fmt-check vet lint staticcheck test test-race bench fuzz
 
 clean:
 	rm -f coverage.out cover.out cpu.out mem.out olc.test example/example

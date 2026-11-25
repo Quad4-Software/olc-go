@@ -5,7 +5,7 @@ import "errors"
 // ErrShortBuffer means dst was too small for EncodeTo.
 var ErrShortBuffer = errors.New("olc: short buffer")
 
-// Encode converts latitude and longitude into a Open Location Code of the given length.
+// Encode converts latitude and longitude into an Open Location Code of the given length.
 //
 // lat is clipped to [-90, 90]. lng is normalised to [-180, 180).
 // NaN coordinates encode as 0 degrees; infinite latitudes clip to the poles
@@ -27,7 +27,7 @@ func EncodeBytes(lat, lng float64, codeLen int) []byte {
 	return out
 }
 
-// EncodeTo writes a Open Location Code into dst and returns the number of bytes written.
+// EncodeTo writes an Open Location Code into dst and returns the number of bytes written.
 // dst must have length >= MaxEncodedLen. This is the zero-allocation encode
 // path when the caller reuses a buffer.
 func EncodeTo(dst []byte, lat, lng float64, codeLen int) (int, error) {

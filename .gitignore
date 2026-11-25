@@ -5,7 +5,6 @@
 *.so
 *.dylib
 *.test
-example/example
 /example/example
 
 # Coverage / profiles

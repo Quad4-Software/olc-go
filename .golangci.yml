@@ -81,10 +81,10 @@ formatters:
     - goimports
   settings:
     gofumpt:
-      module-path: github.com/Quad4-Software/olc-go
+      module-path: git.quad4.io/libraries/olc-go
     goimports:
       local-prefixes:
-        - github.com/Quad4-Software/olc-go
+        - git.quad4.io/libraries/olc-go
 
 issues:
   max-issues-per-linter: 0

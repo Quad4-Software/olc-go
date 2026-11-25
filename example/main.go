@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Quad4-Software/olc-go/olc"
+	"git.quad4.io/libraries/olc-go/olc"
 )
 
 func run(w io.Writer, args []string) error {
@@ -38,6 +38,7 @@ func run(w io.Writer, args []string) error {
 		clat, clng := area.Center()
 		fmt.Fprintf(w, "%s lo=(%f,%f) hi=(%f,%f) center=(%f,%f) len=%d\n",
 			*decodeFlag, area.LatLo, area.LngLo, area.LatHi, area.LngHi, clat, clng, area.Len)
+		return nil
 	}
 
 	if *recoverFlag != "" {
