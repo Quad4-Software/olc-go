@@ -58,6 +58,21 @@ func TestRun(t *testing.T) {
 			args:    []string{"-nope"},
 			wantErr: true,
 		},
+		{
+			name:    "conflicting actions",
+			args:    []string{"-decode", "6GCRPR78+CV", "-recover", "+CV"},
+			wantErr: true,
+		},
+		{
+			name:    "recover with shorten",
+			args:    []string{"-recover", "+CV", "-shorten"},
+			wantErr: true,
+		},
+		{
+			name:    "bad reference lat",
+			args:    []string{"-recover", "+CV", "-ref-lat", "abc"},
+			wantErr: true,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

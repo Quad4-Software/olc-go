@@ -6,15 +6,17 @@ import (
 )
 
 func TestEncodeTo_NoAllocs(t *testing.T) {
-	var dst [MaxEncodedLen]byte
-	allocs := testing.AllocsPerRun(1000, func() {
-		n, err := EncodeTo(dst[:], -1.286386, 36.817223, 10)
-		if err != nil || n == 0 {
-			t.Fatal(err, n)
+	for _, size := range []int{MaxEncodedLen, EncodedLen(10)} {
+		dst := make([]byte, size)
+		allocs := testing.AllocsPerRun(1000, func() {
+			n, err := EncodeTo(dst, -1.286386, 36.817223, 10)
+			if err != nil || n == 0 {
+				t.Fatal(err, n)
+			}
+		})
+		if allocs != 0 {
+			t.Fatalf("EncodeTo size %d allocs %.3f want 0", size, allocs)
 		}
-	})
-	if allocs != 0 {
-		t.Fatalf("EncodeTo allocs %.3f want 0", allocs)
 	}
 }
 
@@ -58,6 +60,14 @@ func TestEncodeTo_MatchesEncode(t *testing.T) {
 		if n != EncodedLen(c.len) {
 			t.Fatalf("EncodedLen=%d n=%d", EncodedLen(c.len), n)
 		}
+		exact := make([]byte, EncodedLen(c.len))
+		exactN, err := EncodeTo(exact, c.lat, c.lng, c.len)
+		if err != nil {
+			t.Fatalf("EncodeTo exact buffer: %v", err)
+		}
+		if exactN != len(exact) || string(exact) != want {
+			t.Fatalf("EncodeTo exact buffer=%q len %d want %q len %d", exact, exactN, want, len(want))
+		}
 	}
 }
 
@@ -76,7 +86,7 @@ func TestAppendEncode_Reuse(t *testing.T) {
 }
 
 func TestEncodeTo_ShortBuffer(t *testing.T) {
-	dst := make([]byte, 4)
+	dst := make([]byte, EncodedLen(10)-1)
 	_, err := EncodeTo(dst, 0, 0, 10)
 	if !errors.Is(err, ErrShortBuffer) {
 		t.Fatalf("got %v want ErrShortBuffer", err)

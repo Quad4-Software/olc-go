@@ -10,10 +10,6 @@
 # Coverage / profiles
 *.out
 *.prof
-coverage.*
-cover.out
-cpu.out
-mem.out
 
 # Go workspace local
 go.work

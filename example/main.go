@@ -29,6 +29,31 @@ func run(w io.Writer, args []string) error {
 	if fs.NArg() > 0 {
 		return errors.New("unexpected arguments")
 	}
+	if *decodeFlag != "" && (*recoverFlag != "" || *shortenFlag) {
+		return errors.New("-decode cannot be combined with -recover or -shorten")
+	}
+	if *recoverFlag != "" && *shortenFlag {
+		return errors.New("-recover cannot be combined with -shorten")
+	}
+
+	parseCoordinate := func(flag, value string) (float64, error) {
+		v, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid %s value %q: %w", flag, value, err)
+		}
+		return v, nil
+	}
+	reference := func() (float64, float64, error) {
+		refLat, err := parseCoordinate("-ref-lat", *refLatStr)
+		if err != nil {
+			return 0, 0, err
+		}
+		refLon, err := parseCoordinate("-ref-lon", *refLonStr)
+		if err != nil {
+			return 0, 0, err
+		}
+		return refLat, refLon, nil
+	}
 
 	if *decodeFlag != "" {
 		area, err := olc.Decode(*decodeFlag)
@@ -42,11 +67,7 @@ func run(w io.Writer, args []string) error {
 	}
 
 	if *recoverFlag != "" {
-		refLat, err := strconv.ParseFloat(*refLatStr, 64)
-		if err != nil {
-			return err
-		}
-		refLon, err := strconv.ParseFloat(*refLonStr, 64)
+		refLat, refLon, err := reference()
 		if err != nil {
 			return err
 		}
@@ -58,11 +79,11 @@ func run(w io.Writer, args []string) error {
 		return nil
 	}
 
-	lat, err := strconv.ParseFloat(*latStr, 64)
+	lat, err := parseCoordinate("-lat", *latStr)
 	if err != nil {
 		return err
 	}
-	lon, err := strconv.ParseFloat(*lonStr, 64)
+	lon, err := parseCoordinate("-lon", *lonStr)
 	if err != nil {
 		return err
 	}
@@ -70,11 +91,7 @@ func run(w io.Writer, args []string) error {
 	fmt.Fprintf(w, "encode %f %f len=%d -> %s\n", lat, lon, *codeLen, code)
 
 	if *shortenFlag {
-		refLat, err := strconv.ParseFloat(*refLatStr, 64)
-		if err != nil {
-			return err
-		}
-		refLon, err := strconv.ParseFloat(*refLonStr, 64)
+		refLat, refLon, err := reference()
 		if err != nil {
 			return err
 		}

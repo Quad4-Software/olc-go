@@ -3,14 +3,32 @@ package olc
 import (
 	"fmt"
 	"math"
+	"strings"
 )
 
 // MinTrimmableCodeLen is the minimum full-code length that can be shortened.
 const MinTrimmableCodeLen = 6
 
-var pairResolutions = [...]float64{20.0, 1.0, 0.05, 0.0025, 0.000125}
+// missingPairResolutions maps padLen/2 values 1 through 4 to the degree
+// resolution of the missing leading pairs.
+var missingPairResolutions = [...]float64{20, 1, 0.05, 0.0025}
+
+// trimSteps is ordered from smallest to largest resolution. start is the byte
+// index of the first retained character.
+var trimSteps = [...]struct {
+	resolution float64
+	start      int
+}{
+	{0.0025, 8},
+	{0.05, 6},
+	{1.0, 4},
+}
 
 // Shorten removes leading characters from a full Open Location Code using a reference location.
+// If the reference is not close enough, it returns the uppercased full code.
+// On error, it returns code unchanged. Reference coordinates use the same clipping
+// and normalization rules as Encode. Longitude distance is circular, so references
+// on opposite sides of the antimeridian can still be close.
 func Shorten(code string, lat, lng float64) (string, error) {
 	dst, err := AppendShorten(nil, code, lat, lng)
 	if err != nil {
@@ -20,22 +38,20 @@ func Shorten(code string, lat, lng float64) (string, error) {
 }
 
 // AppendShorten appends the shortened form of a full Open Location Code to dst
-// using a reference location. It is the zero-allocation variant of Shorten
-// when the caller reuses a buffer.
+// using a reference location. On error, dst is returned unchanged. It is the
+// zero-allocation variant of Shorten when the caller reuses a buffer.
 func AppendShorten(dst []byte, code string, lat, lng float64) ([]byte, error) {
 	if err := CheckFull(code); err != nil {
 		return dst, err
 	}
-	for i := 0; i < len(code); i++ {
-		if code[i] == Padding {
-			return dst, ErrPadded
-		}
+	if strings.IndexByte(code, Padding) >= 0 {
+		return dst, ErrPadded
 	}
 
 	var upperBuf [MaxEncodedLen]byte
 	n := copyUpper(upperBuf[:], code)
 
-	var digits [maxCodeLen]byte
+	var digits [MaxCodeLen]byte
 	area := decodeDigits(digits[:stripInto(digits[:], code)])
 	if area.Len < MinTrimmableCodeLen {
 		return dst, fmt.Errorf("%w: need at least %d", ErrTooShort, MinTrimmableCodeLen)
@@ -43,12 +59,12 @@ func AppendShorten(dst []byte, code string, lat, lng float64) ([]byte, error) {
 
 	lat, lng = clipLatitude(lat), normalizeLng(lng)
 	centerLat, centerLng := area.Center()
-	distance := math.Max(math.Abs(centerLat-lat), math.Abs(centerLng-lng))
+	distance := math.Max(math.Abs(centerLat-lat), math.Abs(longitudeDelta(centerLng, lng)))
 
 	start := 0
-	for i := len(pairResolutions) - 2; i >= 1; i-- {
-		if distance < pairResolutions[i]*0.3 {
-			start = (i + 1) * 2
+	for _, step := range trimSteps {
+		if distance < step.resolution*0.3 {
+			start = step.start
 			break
 		}
 	}
@@ -63,6 +79,10 @@ func AppendShorten(dst []byte, code string, lat, lng float64) ([]byte, error) {
 }
 
 // RecoverNearest recovers the nearest full Open Location Code from a short code and reference point.
+// A valid full code is returned uppercased and otherwise unchanged. On error,
+// it returns code unchanged. Reference coordinates use the same clipping and
+// normalization rules as Encode. Longitude distance is circular, so recovery
+// works across the antimeridian.
 func RecoverNearest(code string, lat, lng float64) (string, error) {
 	dst, err := AppendRecoverNearest(nil, code, lat, lng)
 	if err != nil {
@@ -73,8 +93,8 @@ func RecoverNearest(code string, lat, lng float64) (string, error) {
 
 // AppendRecoverNearest appends the nearest full Open Location Code for a short
 // code and reference point to dst. A valid full code is appended uppercased and
-// otherwise unchanged. It is the zero-allocation variant of RecoverNearest
-// when the caller reuses a buffer.
+// otherwise unchanged. On error, dst is returned unchanged. It is the
+// zero-allocation variant of RecoverNearest when the caller reuses a buffer.
 func AppendRecoverNearest(dst []byte, code string, lat, lng float64) ([]byte, error) {
 	if err := CheckFull(code); err == nil {
 		for i := 0; i < len(code); i++ {
@@ -88,28 +108,20 @@ func AppendRecoverNearest(dst []byte, code string, lat, lng float64) ([]byte, er
 
 	lat, lng = clipLatitude(lat), normalizeLng(lng)
 
-	sep := -1
-	for i := 0; i < len(code); i++ {
-		if code[i] == Separator {
-			sep = i
-			break
-		}
-	}
+	sep := strings.IndexByte(code, Separator)
 	padLen := sepPos - sep
-	resolution := math.Pow(20, float64(2-(padLen/2)))
+	resolution := missingPairResolutions[padLen/2-1]
 	halfRes := resolution / 2
 
 	var merged [MaxEncodedLen]byte
-	if _, err := EncodeTo(merged[:], lat, lng, 0); err != nil {
-		return dst, err
-	}
+	integerEncodeTo(merged[:], latitudeAsInteger(lat), longitudeAsInteger(lng), 0)
 	write := padLen
 	for i := 0; i < len(code) && write < len(merged); i++ {
 		merged[write] = upper(code[i])
 		write++
 	}
 
-	var digits [maxCodeLen]byte
+	var digits [MaxCodeLen]byte
 	dlen := 0
 	for i := 0; i < write; i++ {
 		b := merged[i]
@@ -127,9 +139,9 @@ func AppendRecoverNearest(dst []byte, code string, lat, lng float64) ([]byte, er
 	} else if lat-halfRes > centerLat && centerLat+resolution <= latMax {
 		centerLat += resolution
 	}
-	if lng+halfRes < centerLng {
+	if delta := longitudeDelta(centerLng, lng); delta > halfRes {
 		centerLng -= resolution
-	} else if lng-halfRes > centerLng {
+	} else if delta < -halfRes {
 		centerLng += resolution
 	}
 

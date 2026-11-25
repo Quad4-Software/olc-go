@@ -14,6 +14,12 @@ Dependency-free Go implementation of [Open Location Code](https://github.com/goo
 go get git.quad4.io/libraries/olc-go@latest
 ```
 
+## Compatibility
+
+This module follows semantic versioning. v1 releases keep the exported API
+backward compatible. Bug fixes use patch releases, and backward-compatible
+additions use minor releases. Breaking changes require a new major version.
+
 ## Usage
 
 ```go
@@ -84,9 +90,10 @@ zero-allocation tests. Fuzz coverage lives in `FuzzEncodeDecodeRoundTrip` and
 ## Performance
 
 Prefer `EncodeTo` or `AppendEncode` when encoding in a hot path, and
-`AppendShorten` / `AppendRecoverNearest` for shorten and recover. `Encode`
-returns a `string` and therefore allocates once. `Decode` of a full code is
-allocation-free on the success path.
+`AppendShorten` / `AppendRecoverNearest` for shorten and recover. `EncodeTo`
+needs `EncodedLen(codeLen)` bytes. `MaxEncodedLen` is a convenient fixed buffer
+size when the length varies. `Encode` returns a `string` and therefore allocates
+once. `Decode` of a full code is allocation-free on the success path.
 
 ## Testing
 
@@ -95,6 +102,8 @@ allocation-free on the success path.
 | Default | `go test ./...` |
 | Race | `go test ./... -race` |
 | Lint | `make lint` |
+| Security scan | `make gosec` |
+| Dead code | `make deadcode` |
 | Bench | `go test ./olc -bench=. -benchmem` |
 | Local CI | `make ci` |
 

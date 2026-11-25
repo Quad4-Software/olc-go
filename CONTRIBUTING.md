@@ -11,6 +11,8 @@ Common tasks:
 | Test | `go test ./...` |
 | Race | `go test ./... -race` |
 | Lint | `make lint` |
+| Security scan | `make gosec` |
+| Dead code | `make deadcode` |
 | Format | `make fmt` |
 | Local CI | `make ci` |
 

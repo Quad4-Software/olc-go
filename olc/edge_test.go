@@ -157,6 +157,65 @@ func TestShorten_OverlongFullCode(t *testing.T) {
 	}
 }
 
+func TestRecoverNearest_PolarBoundary(t *testing.T) {
+	cases := []struct {
+		code string
+		lat  float64
+		want string
+	}{
+		{"2222+22", 89.6, "CFX22222+22"},
+		{"XXXXXX+XX", -81, "2CXXXXXX+XX"},
+	}
+	for _, tc := range cases {
+		got, err := RecoverNearest(tc.code, tc.lat, 0)
+		if err != nil {
+			t.Fatalf("RecoverNearest(%q): %v", tc.code, err)
+		}
+		if got != tc.want {
+			t.Errorf("RecoverNearest(%q, %v, 0)=%q want %q", tc.code, tc.lat, got, tc.want)
+		}
+		if !IsFull(got) {
+			t.Errorf("RecoverNearest(%q)=%q is not a valid full code", tc.code, got)
+		}
+	}
+}
+
+func TestShortenRecover_Antimeridian(t *testing.T) {
+	cases := []struct {
+		name    string
+		codeLng float64
+		refLng  float64
+		short   string
+		full    string
+	}{
+		{"east code west reference", 179.999, -179.9998, "2X+2J", "6VGX2X2X+2J"},
+		{"west code east reference", -179.999, 179.9998, "22+2C", "62G22222+2C"},
+		{"four digit trim", 179.9, -179.9, "2W22+22", "6VGX2W22+22"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			code := Encode(0, tc.codeLng, 10)
+			if code != tc.full {
+				t.Fatalf("Encode(0, %v)=%q want %q", tc.codeLng, code, tc.full)
+			}
+			short, err := Shorten(code, 0, tc.refLng)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if short != tc.short {
+				t.Fatalf("Shorten=%q want %q", short, tc.short)
+			}
+			full, err := RecoverNearest(short, 0, tc.refLng)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if full != code {
+				t.Fatalf("RecoverNearest=%q want %q", full, code)
+			}
+		})
+	}
+}
+
 func TestFloorMul_DoesNotSnapRepresentableBoundaryGap(t *testing.T) {
 	const boundary = float64(1e9)
 	x := boundary

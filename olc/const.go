@@ -3,12 +3,7 @@ package olc
 import "math"
 
 const (
-	Separator = '+'
-	Padding   = '0'
-	Alphabet  = "23456789CFGHJMPQRVWX"
-
 	encBase     = 20
-	maxCodeLen  = 15
 	pairCodeLen = 10
 	gridCols    = 4
 	gridRows    = 5
@@ -28,9 +23,22 @@ const (
 	lngOffset = lngMax * finalLngPrecision
 	latRange  = 2 * latMax * finalLatPrecision
 	lngMod    = 2 * lngMax * finalLngPrecision
+)
 
-	// MaxEncodedLen is the maximum byte length produced by Encode, including '+'.
-	MaxEncodedLen = maxCodeLen + 1
+const (
+	// Separator is the character that separates the leading and trailing code sections.
+	Separator = '+'
+	// Padding is the character used to pad codes with fewer than eight significant digits.
+	Padding = '0'
+	// Alphabet is the ordered set of Open Location Code digits.
+	Alphabet = "23456789CFGHJMPQRVWX"
+
+	// DefaultCodeLen is the number of significant digits produced when codeLen is zero or negative.
+	DefaultCodeLen = 10
+	// MaxCodeLen is the maximum number of significant digits in an encoded code.
+	MaxCodeLen = 15
+	// MaxEncodedLen is the maximum byte length produced by Encode, including the separator.
+	MaxEncodedLen = MaxCodeLen + 1
 )
 
 var alphabetIndexTable [256]int8
@@ -50,8 +58,12 @@ func init() {
 
 // CodeArea is the geographic area represented by an Open Location Code.
 type CodeArea struct {
-	LatLo, LngLo, LatHi, LngHi float64
-	Len                        int
+	// LatLo and LngLo are the south and west bounds.
+	LatLo, LngLo float64
+	// LatHi and LngHi are the north and east bounds.
+	LatHi, LngHi float64
+	// Len is the number of significant digits in the decoded code.
+	Len int
 }
 
 // Center returns the latitude and longitude of the area center.
@@ -93,6 +105,18 @@ func normalizeLng(value float64) float64 {
 		return value + 2*lngMax
 	}
 	return value
+}
+
+// longitudeDelta returns a-b wrapped into [-180, 180). Inputs must already be normalized.
+func longitudeDelta(a, b float64) float64 {
+	diff := a - b
+	if diff >= lngMax {
+		return diff - 2*lngMax
+	}
+	if diff < -lngMax {
+		return diff + 2*lngMax
+	}
+	return diff
 }
 
 // floorMul returns floor(degrees * precision), snapping values within two
@@ -140,9 +164,8 @@ func alphabetIndex(b byte) int {
 	return int(alphabetIndexTable[b])
 }
 
-// EncodedLen returns the byte length of an encoded code for codeLen, including '+'.
-// EncodeTo still requires a destination of MaxEncodedLen because encoding uses a
-// fixed workspace before truncating to this length.
+// EncodedLen returns the byte length of an encoded code for codeLen, including the separator.
+// It is the minimum destination length required by EncodeTo.
 func EncodedLen(codeLen int) int {
 	codeLen = clipCodeLen(codeLen)
 	if codeLen >= sepPos {
